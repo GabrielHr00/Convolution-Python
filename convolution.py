@@ -1,5 +1,23 @@
 import numpy as np 
 
+def periodical_convolution(w, w_cut, x_size):
+    # circular convolution
+    # cut the convoled signal with length the given period -> x_size
+    # and then add the rest of the values to the corresponding indexes, 
+    # where if the index is out of bound beginn from 0
+    start_index = len(w_cut)
+    counter = 0
+    i = start_index
+    for x_size in range(len(w)):
+        if counter == len(w_cut):
+            counter = 0
+        if start_index >= len(w):
+            break;
+        w_cut[counter] += w[start_index]
+        counter += 1
+        start_index += 1
+    return w_cut
+
 def construct_overlapping(w, x, h, valid_size, w_size):
     # when overlapping the vector should have length of max(x_size, h_size) - min(x_size,h_size) + 1, which is valid_size
     # then take the values from the convolved signal from the middle considering the even or odd length of the signal
@@ -55,19 +73,28 @@ def con1(x, h, overlap, periodic):
     # check for periodicity and overlapping
     if periodic == False and overlap == False:
         w = convolve_two_signals(w_size, x, h)       
-    elif periodic == True and overlap == False: 
-        w = convolve_two_signals(period, x, h)
+    elif periodic == True and overlap == False:
+        w = convolve_two_signals(w_size, x, h)
+        w_cut = convolve_two_signals(period, x, h)
+        w = periodical_convolution(w, w_cut, x_size)
     elif periodic == False and overlap == True:
         w = convolve_two_signals(w_size, x, h)
         w = construct_overlapping(w, x, h, valid_size, w_size)
-    else: 
-        w = convolve_two_signals(period, x, h)
+    elif periodic == True and overlap == True: 
+        # this case is a little bit tricky, (both true)
+        # first we calculate the convolution
+        # second we take the overlapping parts
+        # third copy the first elements from the overlapped convolled signal -> period
+        # and then do the periodic convolution with the overlapped vector and the trimmed "new" signal
+        w = convolve_two_signals(w_size, x, h)
         w = construct_overlapping(w, x, h, valid_size, w_size)
+        w_cut = w[:period]
+        w = periodical_convolution(w, w_cut, x_size)
     return w
      
-c = [1,2,3]
-y = [3,1,5,67,2,9,56]
-S = con1(c, y, overlap=True, periodic=False)
+x = [1,2]
+y = [3,1,5,2,4,1]
+S = con1(x, y, overlap=True, periodic=True)
 S
 
 
